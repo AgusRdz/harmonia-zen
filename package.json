@@ -1,0 +1,130 @@
+{
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "categories": [
+    "Other",
+    "Themes"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "category": "Harmonia Zen",
+        "command": "harmonia-zen.openPanel",
+        "title": "Open Zen Mode Panel"
+      },
+      {
+        "category": "Harmonia Zen",
+        "command": "harmonia-zen.toggle",
+        "title": "Toggle Zen Mode"
+      },
+      {
+        "category": "Harmonia Zen",
+        "command": "harmonia-zen.startPomodoro",
+        "title": "Start Pomodoro Timer"
+      },
+      {
+        "category": "Harmonia Zen",
+        "command": "harmonia-zen.pausePomodoro",
+        "title": "Pause Pomodoro Timer"
+      },
+      {
+        "category": "Harmonia Zen",
+        "command": "harmonia-zen.stopPomodoro",
+        "title": "Stop Pomodoro Timer"
+      },
+      {
+        "category": "Harmonia Zen",
+        "command": "harmonia-zen.togglePomodoro",
+        "title": "Toggle Pomodoro Timer (Start/Pause)"
+      },
+      {
+        "category": "Harmonia Zen",
+        "command": "harmonia-zen.resetPomodoro",
+        "title": "Reset Pomodoro Timer"
+      },
+      {
+        "category": "Harmonia Zen",
+        "command": "harmonia-zen.skipSession",
+        "title": "Skip Current Session"
+      },
+      {
+        "category": "Harmonia Zen",
+        "command": "harmonia-zen.applyPreset",
+        "title": "Apply Preset"
+      },
+      {
+        "category": "Harmonia Zen",
+        "command": "harmonia-zen.showStatistics",
+        "title": "Show Focus Statistics"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "harmonia-zen.toggle",
+        "key": "ctrl+alt+z",
+        "mac": "cmd+alt+z"
+      },
+      {
+        "command": "harmonia-zen.openPanel",
+        "key": "ctrl+alt+shift+z",
+        "mac": "cmd+alt+shift+z"
+      },
+      {
+        "command": "harmonia-zen.togglePomodoro",
+        "key": "ctrl+alt+p",
+        "mac": "cmd+alt+p"
+      },
+      {
+        "command": "harmonia-zen.stopPomodoro",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s"
+      },
+      {
+        "command": "harmonia-zen.skipSession",
+        "key": "ctrl+alt+n",
+        "mac": "cmd+alt+n"
+      }
+    ]
+  },
+  "dependencies": {
+    "@vscode/codicons": "^0.0.36"
+  },
+  "description": "An immersive, distraction-free coding environment with customizable Zen Mode and integrated Pomodoro timer",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "eslint": "^8.54.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.3.0"
+  },
+  "displayName": "Harmonia Zen",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "icon": "icon.png",
+  "keywords": [
+    "zen",
+    "focus",
+    "pomodoro",
+    "distraction-free",
+    "productivity",
+    "timer",
+    "minimal"
+  ],
+  "license": "MIT",
+  "main": "./out/extension.js",
+  "name": "harmonia-zen",
+  "publisher": "AgusRdz",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AgusRdz/harmonia-zen"
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "lint": "eslint src --ext ts",
+    "vscode:prepublish": "npm run compile",
+    "watch": "tsc -watch -p ./"
+  },
+  "version": "1.0.0"
+}
