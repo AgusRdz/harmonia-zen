@@ -8,6 +8,8 @@ import {
 import { Preset } from '../logic/presetManager'
 import { t, getAllTranslations, TranslationKey } from '../i18n/translations'
 
+export type TimerVisibility = 'always' | 'auto' | 'hidden'
+
 export interface WebviewData {
   zenEnabled: boolean
   zenSettings: ZenModeSettings
@@ -18,6 +20,7 @@ export interface WebviewData {
   activePresetId: string | null
   formattedTime: string
   progress: number
+  timerVisibility: TimerVisibility
 }
 
 export function buildWebviewHtml(
@@ -797,6 +800,14 @@ function buildPomodoroSection(data: WebviewData): string {
                         title="${t('pomodoro.autoStart')}">
                 </button>
               </div>
+              <div class="settings-row">
+                <label class="settings-label" for="timer-visibility">${t('pomodoro.statusBarVisibility')}</label>
+                <select id="timer-visibility" class="settings-select" title="${t('pomodoro.statusBarVisibility')}">
+                  <option value="always" ${data.timerVisibility === 'always' ? 'selected' : ''}>${t('pomodoro.statusBarAlways')}</option>
+                  <option value="auto" ${data.timerVisibility === 'auto' ? 'selected' : ''}>${t('pomodoro.statusBarAuto')}</option>
+                  <option value="hidden" ${data.timerVisibility === 'hidden' ? 'selected' : ''}>${t('pomodoro.statusBarHidden')}</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -1104,6 +1115,17 @@ function getScript(
             e.preventDefault();
             autoStart.click();
           }
+        });
+      }
+
+      // Timer visibility setting
+      const timerVisibility = document.getElementById('timer-visibility');
+      if (timerVisibility) {
+        timerVisibility.addEventListener('change', () => {
+          vscode.postMessage({
+            type: 'updateTimerVisibility',
+            visibility: timerVisibility.value
+          });
         });
       }
 

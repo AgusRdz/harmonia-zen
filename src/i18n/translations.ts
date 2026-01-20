@@ -37,6 +37,10 @@ export type TranslationKey =
   | 'pomodoro.breakDuration'
   | 'pomodoro.longBreakDuration'
   | 'pomodoro.autoStart'
+  | 'pomodoro.statusBarVisibility'
+  | 'pomodoro.statusBarAlways'
+  | 'pomodoro.statusBarAuto'
+  | 'pomodoro.statusBarHidden'
   | 'pomodoro.progressBarPosition'
   | 'pomodoro.progressBarTop'
   | 'pomodoro.progressBarBottom'
@@ -112,6 +116,10 @@ const en: Translations = {
   'pomodoro.breakDuration': 'Break Duration',
   'pomodoro.longBreakDuration': 'Long Break Duration',
   'pomodoro.autoStart': 'Auto-start Next Session',
+  'pomodoro.statusBarVisibility': 'Status Bar Timer',
+  'pomodoro.statusBarAlways': 'Always',
+  'pomodoro.statusBarAuto': 'Auto',
+  'pomodoro.statusBarHidden': 'Hidden',
   'pomodoro.progressBarPosition': 'Progress Bar Position',
   'pomodoro.progressBarTop': 'Top',
   'pomodoro.progressBarBottom': 'Bottom',
@@ -187,6 +195,10 @@ const es: Translations = {
   'pomodoro.breakDuration': 'Duracion del descanso',
   'pomodoro.longBreakDuration': 'Duracion del descanso largo',
   'pomodoro.autoStart': 'Iniciar siguiente sesion automaticamente',
+  'pomodoro.statusBarVisibility': 'Temporizador en barra de estado',
+  'pomodoro.statusBarAlways': 'Siempre',
+  'pomodoro.statusBarAuto': 'Automatico',
+  'pomodoro.statusBarHidden': 'Oculto',
   'pomodoro.progressBarPosition': 'Posicion de la barra de progreso',
   'pomodoro.progressBarTop': 'Arriba',
   'pomodoro.progressBarBottom': 'Abajo',

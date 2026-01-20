@@ -57,8 +57,33 @@
         "category": "Harmonia Zen",
         "command": "harmonia-zen.showStatistics",
         "title": "Show Focus Statistics"
+      },
+      {
+        "category": "Harmonia Zen",
+        "command": "harmonia-zen.getTimerState",
+        "title": "Get Timer State (Internal)"
       }
     ],
+    "configuration": {
+      "title": "Harmonia Zen",
+      "properties": {
+        "harmoniaZen.statusBar.timerVisibility": {
+          "type": "string",
+          "enum": [
+            "always",
+            "auto",
+            "hidden"
+          ],
+          "default": "auto",
+          "description": "Controls when the Pomodoro timer is shown in the status bar. 'always' shows the timer at all times, 'auto' shows only when running (and hides if another Harmonia timer has priority), 'hidden' never shows the timer.",
+          "enumDescriptions": [
+            "Always show the status bar timer",
+            "Show only when timer is running (recommended when using with Harmonia Focus)",
+            "Never show the status bar timer"
+          ]
+        }
+      }
+    },
     "keybindings": [
       {
         "command": "harmonia-zen.toggle",
@@ -126,5 +151,5 @@
     "vscode:prepublish": "npm run compile",
     "watch": "tsc -watch -p ./"
   },
-  "version": "1.0.0"
+  "version": "1.1.0"
 }

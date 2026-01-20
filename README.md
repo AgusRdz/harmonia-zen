@@ -26,6 +26,7 @@ A sleek control panel where you configure your distraction-free environment. Tog
 ![Zen Mode Panel](images/zen-mode.png)
 
 **Controllable elements:**
+
 - Editor: Line Numbers, Gutter, Minimap, Breadcrumbs, Indent Guides, Bracket Pairs, Rulers
 - Scrollbars: Vertical and Horizontal
 - Workbench: Activity Bar, Status Bar, Side Bar, Panel, Tabs
@@ -35,12 +36,12 @@ A sleek control panel where you configure your distraction-free environment. Tog
 
 Quickly switch between different configurations:
 
-| Preset | Description |
-|--------|-------------|
-| **Minimal** | Hide everything for maximum focus |
-| **Writer** | Clean view with cursor and scrollbar |
-| **Focus** | Keep code aids, hide distractions |
-| **Custom** | Save your own configurations |
+| Preset      | Description                          |
+| ----------- | ------------------------------------ |
+| **Minimal** | Hide everything for maximum focus    |
+| **Writer**  | Clean view with cursor and scrollbar |
+| **Focus**   | Keep code aids, hide distractions    |
+| **Custom**  | Save your own configurations         |
 
 ### Pomodoro Timer
 
@@ -89,24 +90,37 @@ Track your productivity journey with detailed statistics:
 3. **Stop**: Press `Cmd+Alt+S` / `Ctrl+Alt+S`
 4. **Skip session**: Press `Cmd+Alt+N` / `Ctrl+Alt+N`
 
-The timer also appears in the status bar for quick access.
+The timer also appears in the status bar for quick access. Click it to open the Zen Panel.
+
+#### Status Bar Visibility
+
+Control when the timer appears in the status bar via `harmoniaZen.statusBar.timerVisibility`:
+
+| Option           | Behavior                        |
+| ---------------- | ------------------------------- |
+| `always`         | Always show the status bar item |
+| `auto` (default) | Show only when timer is running |
+| `hidden`         | Never show the status bar item  |
+
+**Using with Harmonia Focus?** Both extensions default to `auto` mode. When both timers are running, Zen Pomodoro takes priority and Focus Eye Break hides its status bar item to avoid clutter.
 
 ### View Statistics
 
 Open the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and run:
+
 ```
 Harmonia Zen: Show Focus Statistics
 ```
 
 ## Keyboard Shortcuts
 
-| Action | Mac | Windows/Linux |
-|--------|-----|---------------|
-| Toggle Zen Mode | `Cmd+Alt+Z` | `Ctrl+Alt+Z` |
-| Open Panel | `Cmd+Alt+Shift+Z` | `Ctrl+Alt+Shift+Z` |
-| Toggle Timer | `Cmd+Alt+P` | `Ctrl+Alt+P` |
-| Stop Timer | `Cmd+Alt+S` | `Ctrl+Alt+S` |
-| Skip Session | `Cmd+Alt+N` | `Ctrl+Alt+N` |
+| Action          | Mac               | Windows/Linux      |
+| --------------- | ----------------- | ------------------ |
+| Toggle Zen Mode | `Cmd+Alt+Z`       | `Ctrl+Alt+Z`       |
+| Open Panel      | `Cmd+Alt+Shift+Z` | `Ctrl+Alt+Shift+Z` |
+| Toggle Timer    | `Cmd+Alt+P`       | `Ctrl+Alt+P`       |
+| Stop Timer      | `Cmd+Alt+S`       | `Ctrl+Alt+S`       |
+| Skip Session    | `Cmd+Alt+N`       | `Ctrl+Alt+N`       |
 
 ## Commands
 
@@ -126,6 +140,7 @@ All commands are available in the Command Palette under the "Harmonia Zen" categ
 ## Languages
 
 Harmonia Zen supports:
+
 - English (default)
 - Spanish
 
@@ -134,6 +149,7 @@ The language is automatically detected from your VS Code settings.
 ## Privacy
 
 Harmonia Zen respects your privacy:
+
 - **No telemetry** - Zero data collection or transmission
 - **Local storage only** - All settings and statistics are stored locally
 - **No cloud sync** - The extension does not communicate externally

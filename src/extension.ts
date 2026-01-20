@@ -12,9 +12,36 @@ let pomodoroTimer: PomodoroTimer
 let presetManager: PresetManager
 let statisticsManager: StatisticsManager
 let statusBarItem: vscode.StatusBarItem
+let extensionContext: vscode.ExtensionContext
+
+type TimerVisibility = 'always' | 'auto' | 'hidden'
+
+interface HarmoniaTimerState {
+  isRunning: boolean
+  phase: string
+  timeRemaining: number
+}
+
+function getTimerVisibility(): TimerVisibility {
+  const config = vscode.workspace.getConfiguration('harmoniaZen')
+  return config.get<TimerVisibility>('statusBar.timerVisibility', 'auto')
+}
+
+async function isHarmoniaFocusTimerRunning(): Promise<boolean> {
+  try {
+    const state = await vscode.commands.executeCommand<HarmoniaTimerState | undefined>(
+      'harmoniaVision.getTimerState'
+    )
+    return state?.isRunning === true
+  } catch {
+    // Harmonia Focus not installed or command not available
+    return false
+  }
+}
 
 export function activate(context: vscode.ExtensionContext): void {
   initializeTranslations()
+  extensionContext = context
 
   zenManager = new ZenModeManager(context)
   pomodoroTimer = new PomodoroTimer(context)
@@ -131,6 +158,28 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   )
 
+  // Command to expose timer state for cross-extension coordination
+  const getTimerStateCommand = vscode.commands.registerCommand(
+    'harmonia-zen.getTimerState',
+    (): HarmoniaTimerState => {
+      const state = pomodoroTimer.getState()
+      return {
+        isRunning: state.isRunning,
+        phase: state.phase,
+        timeRemaining: state.timeRemaining
+      }
+    }
+  )
+
+  // Listen for configuration changes
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration('harmoniaZen.statusBar.timerVisibility')) {
+        updateStatusBar()
+      }
+    })
+  )
+
   context.subscriptions.push(
     openPanelCommand,
     toggleCommand,
@@ -141,43 +190,62 @@ export function activate(context: vscode.ExtensionContext): void {
     skipSessionCommand,
     togglePomodoroCommand,
     applyPresetCommand,
-    showStatisticsCommand
+    showStatisticsCommand,
+    getTimerStateCommand
   )
 }
 
 function createStatusBarItem(): vscode.StatusBarItem {
   const item = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Right,
-    100
+    101 // Higher priority than Harmonia Focus (100) to show on left when both visible
   )
-  // Click toggles pomodoro start/pause instead of opening panel
-  item.command = 'harmonia-zen.togglePomodoro'
-  item.show()
+  // Click opens the panel for better UX (instead of toggle which can be confusing)
+  item.command = 'harmonia-zen.openPanel'
   return item
 }
 
 function updateStatusBar(): void {
+  const visibility = getTimerVisibility()
   const state = pomodoroTimer.getState()
   const isZenEnabled = zenManager.isZenModeEnabled()
+  const isTimerActive = state.phase !== 'idle'
 
+  // Handle visibility modes
+  if (visibility === 'hidden') {
+    statusBarItem.hide()
+    return
+  }
+
+  if (visibility === 'auto') {
+    // In auto mode, only show when timer is running (not idle)
+    if (!isTimerActive) {
+      statusBarItem.hide()
+      return
+    }
+    // Zen Pomodoro has priority - always show when running
+    // (Harmonia Focus will check our state and hide itself)
+  }
+
+  // Build the status bar display
   const zenIcon = isZenEnabled ? '$(eye-closed)' : '$(eye)'
 
   if (state.phase === 'idle') {
     statusBarItem.text = `${zenIcon} Zen`
-    statusBarItem.tooltip = 'Harmonia Zen - Click to start timer'
+    statusBarItem.tooltip = 'Harmonia Zen — Click to open panel'
   } else {
+    const phaseLabel = state.phase === 'work' ? 'Work' : state.phase === 'break' ? 'Break' : 'Long Break'
     const phaseIcon = state.phase === 'work' ? '$(clock)' : '$(coffee)'
     const time = pomodoroTimer.formatTime(state.timeRemaining)
     const runningIndicator = state.isRunning ? '' : ' $(debug-pause)'
 
     statusBarItem.text = `${zenIcon} ${phaseIcon} ${time}${runningIndicator}`
-    statusBarItem.tooltip = state.isRunning
-      ? 'Click to pause'
-      : 'Click to resume'
+    statusBarItem.tooltip = `Harmonia Zen — Pomodoro ${phaseLabel} (${time})${state.isRunning ? '' : ' [Paused]'}`
   }
 
   // Remove the yellow warning background - keep it clean and consistent
   statusBarItem.backgroundColor = undefined
+  statusBarItem.show()
 }
 
 export function deactivate(): void {

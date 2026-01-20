@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { ZenModeManager, ZenModeSettings } from '../logic/zenModeManager'
 import { PomodoroTimer, PomodoroSettings } from '../logic/pomodoroTimer'
 import { PresetManager } from '../logic/presetManager'
-import { buildWebviewHtml, WebviewData } from '../webview/htmlBuilder'
+import { buildWebviewHtml, WebviewData, TimerVisibility } from '../webview/htmlBuilder'
 import { t } from '../i18n/translations'
 import { debounce } from '../utils/throttle'
 
@@ -86,11 +86,14 @@ export class ZenPanel {
     )
 
     // Send incremental zen status update instead of full re-render
+    // Guard: check if THIS panel instance is still the active one
     this.zenManager.onStateChange((enabled) => {
-      this.panel.webview.postMessage({
-        type: 'updateZenStatus',
-        enabled
-      })
+      if (ZenPanel.currentPanel === this) {
+        this.panel.webview.postMessage({
+          type: 'updateZenStatus',
+          enabled
+        })
+      }
     })
 
     // UI element toggles - use optimistic UI, no re-render needed
@@ -99,20 +102,25 @@ export class ZenPanel {
     })
 
     // Timer tick - incremental update only
+    // Guard: check if THIS panel instance is still the active one
     this.pomodoroTimer.onTick((state) => {
-      this.panel.webview.postMessage({
-        type: 'updateTimer',
-        formattedTime: this.pomodoroTimer.formatTime(state.timeRemaining),
-        progress: this.pomodoroTimer.getProgress(),
-        isRunning: state.isRunning,
-        phase: state.phase,
-        sessions: state.completedSessions
-      })
+      if (ZenPanel.currentPanel === this) {
+        this.panel.webview.postMessage({
+          type: 'updateTimer',
+          formattedTime: this.pomodoroTimer.formatTime(state.timeRemaining),
+          progress: this.pomodoroTimer.getProgress(),
+          isRunning: state.isRunning,
+          phase: state.phase,
+          sessions: state.completedSessions
+        })
+      }
     })
 
     // Phase change needs full re-render for button state (Start/Pause)
     this.pomodoroTimer.onPhaseChange(() => {
-      this.debouncedUpdate()
+      if (ZenPanel.currentPanel === this) {
+        this.debouncedUpdate()
+      }
     })
 
     // Settings change - no re-render needed, webview handles locally
@@ -122,11 +130,15 @@ export class ZenPanel {
 
     // Presets change needs full re-render to update the list
     this.presetManager.onPresetsChange(() => {
-      this.debouncedUpdate()
+      if (ZenPanel.currentPanel === this) {
+        this.debouncedUpdate()
+      }
     })
 
     this.presetManager.onActivePresetChange(() => {
-      this.debouncedUpdate()
+      if (ZenPanel.currentPanel === this) {
+        this.debouncedUpdate()
+      }
     })
   }
 
@@ -209,7 +221,23 @@ export class ZenPanel {
           await this.presetManager.saveCustomPreset(name.trim(), settings)
         }
         break
+
+      case 'updateTimerVisibility':
+        if (message.visibility) {
+          const config = vscode.workspace.getConfiguration('harmoniaZen')
+          await config.update(
+            'statusBar.timerVisibility',
+            message.visibility,
+            vscode.ConfigurationTarget.Global
+          )
+        }
+        break
     }
+  }
+
+  private getTimerVisibility(): TimerVisibility {
+    const config = vscode.workspace.getConfiguration('harmoniaZen')
+    return config.get<TimerVisibility>('statusBar.timerVisibility', 'auto')
   }
 
   private updateWebview(): void {
@@ -224,7 +252,8 @@ export class ZenPanel {
       formattedTime: this.pomodoroTimer.formatTime(
         this.pomodoroTimer.getState().timeRemaining
       ),
-      progress: this.pomodoroTimer.getProgress()
+      progress: this.pomodoroTimer.getProgress(),
+      timerVisibility: this.getTimerVisibility()
     }
 
     this.panel.webview.html = buildWebviewHtml(
@@ -254,4 +283,5 @@ interface WebviewMessage {
   value?: boolean
   presetId?: string
   settings?: Partial<PomodoroSettings>
+  visibility?: TimerVisibility
 }

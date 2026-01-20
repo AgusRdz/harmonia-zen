@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.1.0] - 2026-01-20
+
+### Added
+
+- **Status Bar Timer Visibility Setting**
+  - New setting `harmoniaZen.statusBar.timerVisibility` with options:
+    - `always` - Always show the status bar timer
+    - `auto` (default) - Show only when timer is running; hides when idle
+    - `hidden` - Never show the status bar timer
+  - **UI Control** - Configurable directly from the Zen Panel under Timer Settings
+  - Enables clean UX when using both Harmonia Zen and Harmonia Focus together
+  - Zen Pomodoro timer has priority over Focus Eye Break timer in `auto` mode
+
+- **Cross-Extension Coordination**
+  - New internal command `harmonia-zen.getTimerState` for extension communication
+  - Allows Harmonia Focus to detect when Zen Pomodoro is active and yield the status bar
+
+### Fixed
+
+- **Webview Disposed Error** - Fixed "webview disposed" error when clicking the status bar timer after closing and reopening the Zen Panel
+  - Added proper guards to check if the panel instance is still active before posting messages
+  - Prevents stale callbacks from attempting to update disposed webviews
+
+### Improved
+
+- **Status Bar Click Behavior** - Now opens the Zen Panel instead of toggling timer (more intuitive UX)
+- **Tooltips** - Clearer, more descriptive tooltips:
+  - Idle: `Harmonia Zen - Click to open panel`
+  - Running: `Harmonia Zen - Pomodoro Work (25:00)`
+  - Break: `Harmonia Zen - Pomodoro Break (05:00)`
+
+---
+
 ## [1.0.0] - 2025-01-18
 
 ### Added
