@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.0] - 2026-02-11
+
+### Added
+
+- **Work Schedule** - Configure work days and hours to automatically end focus sessions when your shift is over
+  - Select active days (Mon-Fri by default) and start/end times
+  - End-of-shift notification with extend or end session options
+  - Night shift support (end time before start time)
+  - Cross-window coordination so only one window shows the alert
+- **Cross-Window Sync** - Pomodoro timer and Zen Mode state now synchronize across all open VS Code windows
+  - Start, pause, reset, or skip the timer in one window and all others follow
+  - Toggle zen mode, change UI element toggles, or apply presets - all windows stay in sync
+  - Late-joiner support: opening a new window picks up current state from running windows
+  - Uses file-based coordination with echo prevention (no duplicate actions)
+
+---
+
 ## [1.1.0] - 2026-01-20
 
 ### Added

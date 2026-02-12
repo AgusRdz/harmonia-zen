@@ -289,6 +289,49 @@ export class PomodoroTimer {
     )
   }
 
+  syncState(remoteState: PomodoroState, remoteSettings?: PomodoroSettings): void {
+    // Stop current interval
+    if (this.intervalId) {
+      clearInterval(this.intervalId)
+      this.intervalId = null
+    }
+
+    // Apply remote settings if provided
+    if (remoteSettings) {
+      this.settings = { ...remoteSettings }
+      this.saveSettings()
+    }
+
+    // Apply remote state directly
+    this.state = { ...remoteState }
+    this.saveState()
+
+    // Restart interval if running
+    if (this.state.isRunning) {
+      this.intervalId = setInterval(() => {
+        this.tick()
+      }, 1000)
+    }
+
+    // Notify UI (but NOT notifications/statistics — those are local-only)
+    this.notifyTick()
+    this.notifyPhaseChange()
+  }
+
+  syncSettings(remoteSettings: PomodoroSettings): void {
+    this.settings = { ...remoteSettings }
+    this.saveSettings()
+    this.notifySettingsChange()
+
+    if (this.state.phase === 'idle') {
+      this.state.timeRemaining = this.settings.workDuration * 60
+      this.state.totalTime = this.settings.workDuration * 60
+      this.state.sessionsUntilLongBreak = this.settings.sessionsBeforeLongBreak
+      this.saveState()
+      this.notifyTick()
+    }
+  }
+
   updateSettings(newSettings: Partial<PomodoroSettings>): void {
     this.settings = { ...this.settings, ...newSettings }
     this.saveSettings()

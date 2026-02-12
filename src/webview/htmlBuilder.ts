@@ -6,6 +6,7 @@ import {
   PomodoroPhase
 } from '../logic/pomodoroTimer'
 import { Preset } from '../logic/presetManager'
+import { WorkSchedule } from '../logic/scheduleManager'
 import { t, getAllTranslations, TranslationKey } from '../i18n/translations'
 
 export type TimerVisibility = 'always' | 'auto' | 'hidden'
@@ -21,6 +22,7 @@ export interface WebviewData {
   formattedTime: string
   progress: number
   timerVisibility: TimerVisibility
+  scheduleSettings: WorkSchedule
 }
 
 export function buildWebviewHtml(
@@ -68,6 +70,28 @@ export function buildWebviewHtml(
         ${buildTogglesSection(data)}
       </div>
     </div>
+    ${buildScheduleSection(data)}
+  </div>
+  <div class="modal-overlay" id="extend-modal" role="dialog" aria-modal="true" aria-labelledby="extend-modal-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 id="extend-modal-title">
+          <span class="codicon codicon-history"></span>
+          ${t('schedule.extendModalTitle')}
+        </h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-description">${t('schedule.extendModalDesc')}</p>
+        <div class="modal-field">
+          <label class="settings-label" for="extend-end-time">${t('schedule.newEndTime')}</label>
+          <input type="time" id="extend-end-time" class="settings-time-input" aria-label="${t('schedule.newEndTime')}">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="extend-cancel">${t('schedule.cancel')}</button>
+        <button class="btn btn-primary" id="extend-confirm">${t('schedule.confirm')}</button>
+      </div>
+    </div>
   </div>
   <script nonce="${nonce}">
     ${getScript(translations, data)}
@@ -113,6 +137,16 @@ function getStyles(): string {
       line-height: 1.5;
       padding: var(--spacing-lg);
       min-width: 520px;
+    }
+
+    body.vscode-dark,
+    body.vscode-high-contrast {
+      color-scheme: dark;
+    }
+
+    body.vscode-light,
+    body.vscode-high-contrast-light {
+      color-scheme: light;
     }
 
     .container {
@@ -247,6 +281,7 @@ function getStyles(): string {
       align-items: center;
       gap: var(--spacing-sm);
     }
+
 
     .card-content {
       padding: var(--spacing-lg);
@@ -662,6 +697,159 @@ function getStyles(): string {
       margin-top: 1px;
     }
 
+    /* Schedule Section */
+    .schedule-days {
+      display: flex;
+      gap: var(--spacing-sm);
+      flex-wrap: wrap;
+      padding: var(--spacing-sm) 0;
+    }
+
+    .schedule-day-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 38px;
+      height: 30px;
+      padding: 0 var(--spacing-sm);
+      border: 1px solid var(--vscode-input-border);
+      border-radius: 15px;
+      background: var(--vscode-input-background);
+      color: var(--vscode-foreground);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      opacity: 0.6;
+    }
+
+    .schedule-day-btn:hover {
+      border-color: var(--vscode-focusBorder);
+      opacity: 0.8;
+    }
+
+    .schedule-day-btn:focus {
+      outline: 2px solid var(--vscode-focusBorder);
+      outline-offset: 2px;
+    }
+
+    .schedule-day-btn.active {
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      border-color: var(--vscode-button-background);
+      opacity: 1;
+    }
+
+    .settings-time-input {
+      width: 130px;
+      padding: 6px var(--spacing-sm);
+      border: 1px solid var(--vscode-input-border);
+      border-radius: var(--border-radius);
+      background: var(--vscode-input-background);
+      color: var(--vscode-input-foreground);
+      font-family: inherit;
+      font-size: 12px;
+      accent-color: var(--vscode-button-background);
+    }
+
+    .settings-time-input:focus {
+      outline: none;
+      border-color: var(--vscode-focusBorder);
+    }
+
+    body.vscode-dark .settings-time-input,
+    body.vscode-high-contrast .settings-time-input {
+      color-scheme: dark;
+    }
+
+    .schedule-description {
+      font-size: 11px;
+      color: var(--vscode-descriptionForeground);
+      line-height: 1.4;
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .schedule-settings-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--spacing-lg);
+      align-items: start;
+    }
+
+    .schedule-field-gap {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+
+    .schedule-content-disabled {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    /* Extend Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.visible {
+      display: flex;
+    }
+
+    .modal-dialog {
+      background: var(--vscode-editor-background);
+      border: 1px solid var(--vscode-widget-border);
+      border-radius: var(--border-radius);
+      width: 340px;
+      max-width: 90vw;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+      padding: var(--spacing-lg);
+      border-bottom: 1px solid var(--vscode-widget-border);
+    }
+
+    .modal-header h2 {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .modal-body {
+      padding: var(--spacing-lg);
+    }
+
+    .modal-description {
+      font-size: 12px;
+      color: var(--vscode-descriptionForeground);
+      line-height: 1.5;
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .modal-field {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-top: 1px solid var(--vscode-widget-border);
+    }
+
     /* Responsive */
     @media (max-width: 560px) {
       .main-content {
@@ -926,6 +1114,83 @@ function buildPresetsSection(data: WebviewData): string {
   `
 }
 
+function buildScheduleSection(data: WebviewData): string {
+  const { scheduleSettings } = data
+  const dayKeys: TranslationKey[] = [
+    'schedule.sun',
+    'schedule.mon',
+    'schedule.tue',
+    'schedule.wed',
+    'schedule.thu',
+    'schedule.fri',
+    'schedule.sat'
+  ]
+
+  const dayButtons = dayKeys
+    .map((key, index) => {
+      const isActive = scheduleSettings.activeDays.includes(index)
+      return `
+        <button class="schedule-day-btn ${isActive ? 'active' : ''}"
+                data-day-index="${index}"
+                role="checkbox"
+                aria-checked="${isActive}"
+                aria-label="${t(key)}"
+                tabindex="0">
+          ${t(key)}
+        </button>
+      `
+    })
+    .join('')
+
+  return `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">
+          <span class="codicon codicon-history"></span>
+          ${t('schedule.title')}
+        </span>
+        <button class="toggle-switch toggle-switch-sm ${scheduleSettings.enabled ? 'active' : ''}"
+                id="schedule-enable"
+                role="switch"
+                aria-checked="${scheduleSettings.enabled}"
+                aria-label="${t('schedule.enable')}"
+                title="${t('schedule.enable')}"
+                tabindex="0">
+        </button>
+      </div>
+      <div class="card-content">
+        <div class="schedule-description">${t('schedule.description')}</div>
+        <div id="schedule-content" class="${scheduleSettings.enabled ? '' : 'schedule-content-disabled'}">
+          <div class="schedule-settings-grid">
+            <div>
+              <label class="settings-label">${t('schedule.workDays')}</label>
+              <div class="schedule-days" role="group" aria-label="${t('schedule.workDays')}">
+                ${dayButtons}
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="schedule-field-gap">
+                <label class="settings-label" for="schedule-start-time">${t('schedule.startTime')}</label>
+                <input type="time" id="schedule-start-time" class="settings-time-input"
+                       value="${scheduleSettings.startTime}"
+                       aria-label="${t('schedule.startTime')}">
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="schedule-field-gap">
+                <label class="settings-label" for="schedule-end-time">${t('schedule.endTime')}</label>
+                <input type="time" id="schedule-end-time" class="settings-time-input"
+                       value="${scheduleSettings.endTime}"
+                       aria-label="${t('schedule.endTime')}">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+}
+
 function getScript(
   translations: Record<string, string>,
   initialData: WebviewData
@@ -1129,6 +1394,85 @@ function getScript(
         });
       }
 
+      // Schedule enable toggle
+      const scheduleEnable = document.getElementById('schedule-enable');
+      const scheduleContent = document.getElementById('schedule-content');
+
+      if (scheduleEnable) {
+        scheduleEnable.addEventListener('click', () => {
+          const isActive = scheduleEnable.classList.contains('active');
+          scheduleEnable.classList.toggle('active');
+          scheduleEnable.setAttribute('aria-checked', (!isActive).toString());
+
+          if (scheduleContent) {
+            scheduleContent.classList.toggle('schedule-content-disabled', isActive);
+          }
+
+          vscode.postMessage({
+            type: 'updateScheduleSettings',
+            scheduleSettings: { enabled: !isActive }
+          });
+        });
+
+        scheduleEnable.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            scheduleEnable.click();
+          }
+        });
+      }
+
+      // Schedule day buttons
+      document.querySelectorAll('.schedule-day-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          btn.classList.toggle('active');
+          const isActive = btn.classList.contains('active');
+          btn.setAttribute('aria-checked', isActive.toString());
+
+          // Collect all active days
+          const activeDays = [];
+          document.querySelectorAll('.schedule-day-btn').forEach(dayBtn => {
+            if (dayBtn.classList.contains('active')) {
+              activeDays.push(parseInt(dayBtn.getAttribute('data-day-index'), 10));
+            }
+          });
+
+          vscode.postMessage({
+            type: 'updateScheduleSettings',
+            scheduleSettings: { activeDays }
+          });
+        });
+
+        btn.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            btn.click();
+          }
+        });
+      });
+
+      // Schedule time inputs
+      const scheduleStartTime = document.getElementById('schedule-start-time');
+      const scheduleEndTime = document.getElementById('schedule-end-time');
+
+      function sendScheduleTimeUpdate() {
+        if (scheduleStartTime && scheduleEndTime) {
+          vscode.postMessage({
+            type: 'updateScheduleSettings',
+            scheduleSettings: {
+              startTime: scheduleStartTime.value,
+              endTime: scheduleEndTime.value
+            }
+          });
+        }
+      }
+
+      [scheduleStartTime, scheduleEndTime].forEach(input => {
+        if (input) {
+          input.addEventListener('change', sendScheduleTimeUpdate);
+        }
+      });
+
       // Presets
       document.querySelectorAll('.preset-item').forEach(item => {
         item.addEventListener('click', (e) => {
@@ -1145,6 +1489,67 @@ function getScript(
             }
           }
         });
+      });
+
+      // Extend session modal
+      const extendModal = document.getElementById('extend-modal');
+      const extendEndTime = document.getElementById('extend-end-time');
+      const extendConfirm = document.getElementById('extend-confirm');
+      const extendCancel = document.getElementById('extend-cancel');
+
+      function showExtendModal() {
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        if (extendEndTime) {
+          extendEndTime.value = hh + ':' + mm;
+        }
+        if (extendModal) {
+          extendModal.classList.add('visible');
+          if (extendEndTime) {
+            extendEndTime.focus();
+          }
+        }
+      }
+
+      function hideExtendModal(cancelled) {
+        if (extendModal) {
+          extendModal.classList.remove('visible');
+        }
+        if (cancelled) {
+          vscode.postMessage({ type: 'cancelExtendSession' });
+        }
+      }
+
+      if (extendConfirm) {
+        extendConfirm.addEventListener('click', () => {
+          if (extendEndTime && extendEndTime.value) {
+            vscode.postMessage({
+              type: 'confirmExtendSession',
+              endTime: extendEndTime.value
+            });
+          }
+          hideExtendModal(false);
+        });
+      }
+
+      if (extendCancel) {
+        extendCancel.addEventListener('click', () => hideExtendModal(true));
+      }
+
+      if (extendModal) {
+        extendModal.addEventListener('click', (e) => {
+          if (e.target === extendModal) {
+            hideExtendModal(true);
+          }
+        });
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && extendModal && extendModal.classList.contains('visible')) {
+          hideExtendModal(true);
+        }
       });
 
       // Handle messages from extension - update only what changed
@@ -1179,6 +1584,23 @@ function getScript(
               zenToggleBtn.classList.toggle('active', message.enabled);
               zenToggleBtn.setAttribute('aria-checked', message.enabled.toString());
             }
+            break;
+
+          case 'updateZenToggles':
+            if (message.settings) {
+              document.querySelectorAll('[data-toggle-id]').forEach(function(el) {
+                const tid = el.getAttribute('data-toggle-id');
+                if (tid && message.settings[tid] !== undefined) {
+                  const isActive = !!message.settings[tid];
+                  el.classList.toggle('active', isActive);
+                  el.setAttribute('aria-checked', isActive.toString());
+                }
+              });
+            }
+            break;
+
+          case 'showExtendModal':
+            showExtendModal();
             break;
         }
       });

@@ -392,6 +392,21 @@ export class ZenModeManager {
     }
   }
 
+  async syncState(enabled: boolean, settings: ZenModeSettings): Promise<void> {
+    this.userSettings = { ...settings }
+    this.debouncedSaveUserSettings()
+    this.notifySettingsChange()
+
+    if (enabled && !this.zenEnabled) {
+      await this.enable()
+    } else if (!enabled && this.zenEnabled) {
+      await this.disable()
+    } else if (enabled && this.zenEnabled) {
+      // Already enabled but settings changed — re-apply
+      await this.applyZenSettings()
+    }
+  }
+
   async applySettings(settings: ZenModeSettings): Promise<void> {
     this.userSettings = { ...settings }
     this.debouncedSaveUserSettings()

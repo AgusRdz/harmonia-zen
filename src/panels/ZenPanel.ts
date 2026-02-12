@@ -2,6 +2,8 @@ import * as vscode from 'vscode'
 import { ZenModeManager, ZenModeSettings } from '../logic/zenModeManager'
 import { PomodoroTimer, PomodoroSettings } from '../logic/pomodoroTimer'
 import { PresetManager } from '../logic/presetManager'
+import { ScheduleManager, WorkSchedule } from '../logic/scheduleManager'
+import { CrossWindowSync } from '../logic/crossWindowSync'
 import { buildWebviewHtml, WebviewData, TimerVisibility } from '../webview/htmlBuilder'
 import { t } from '../i18n/translations'
 import { debounce } from '../utils/throttle'
@@ -15,6 +17,8 @@ export class ZenPanel {
   private readonly zenManager: ZenModeManager
   private readonly pomodoroTimer: PomodoroTimer
   private readonly presetManager: PresetManager
+  private readonly scheduleManager: ScheduleManager
+  private readonly crossWindowSync: CrossWindowSync
   private disposables: vscode.Disposable[] = []
 
   private debouncedUpdate = debounce(() => {
@@ -26,13 +30,17 @@ export class ZenPanel {
     extensionUri: vscode.Uri,
     zenManager: ZenModeManager,
     pomodoroTimer: PomodoroTimer,
-    presetManager: PresetManager
+    presetManager: PresetManager,
+    scheduleManager: ScheduleManager,
+    crossWindowSync: CrossWindowSync
   ) {
     this.panel = panel
     this.extensionUri = extensionUri
     this.zenManager = zenManager
     this.pomodoroTimer = pomodoroTimer
     this.presetManager = presetManager
+    this.scheduleManager = scheduleManager
+    this.crossWindowSync = crossWindowSync
 
     this.updateWebview()
     this.setupListeners()
@@ -42,7 +50,9 @@ export class ZenPanel {
     extensionUri: vscode.Uri,
     zenManager: ZenModeManager,
     pomodoroTimer: PomodoroTimer,
-    presetManager: PresetManager
+    presetManager: PresetManager,
+    scheduleManager: ScheduleManager,
+    crossWindowSync: CrossWindowSync
   ): ZenPanel {
     const column = vscode.ViewColumn.Beside
 
@@ -70,7 +80,9 @@ export class ZenPanel {
       extensionUri,
       zenManager,
       pomodoroTimer,
-      presetManager
+      presetManager,
+      scheduleManager,
+      crossWindowSync
     )
 
     return ZenPanel.currentPanel
@@ -96,9 +108,14 @@ export class ZenPanel {
       }
     })
 
-    // UI element toggles - use optimistic UI, no re-render needed
-    this.zenManager.onSettingsChange(() => {
-      // No action needed - webview handles optimistic updates
+    // UI element toggles - push settings to webview for remote sync
+    this.zenManager.onSettingsChange((settings) => {
+      if (ZenPanel.currentPanel === this) {
+        this.panel.webview.postMessage({
+          type: 'updateZenToggles',
+          settings
+        })
+      }
     })
 
     // Timer tick - incremental update only
@@ -140,12 +157,21 @@ export class ZenPanel {
         this.debouncedUpdate()
       }
     })
+
+    // Schedule settings change - no re-render needed, webview handles locally
+    this.scheduleManager.onSettingsChange(() => {
+      // No action needed - webview handles state locally
+    })
   }
 
   private async handleMessage(message: WebviewMessage): Promise<void> {
     switch (message.type) {
       case 'toggleZen':
         await this.zenManager.toggle()
+        this.crossWindowSync.broadcast({
+          type: this.zenManager.isZenModeEnabled() ? 'zenEnable' : 'zenDisable',
+          settings: this.zenManager.getUserSettings()
+        })
         break
 
       case 'updateToggle':
@@ -154,32 +180,58 @@ export class ZenPanel {
             message.toggleId as keyof ZenModeSettings,
             message.value
           )
+          this.crossWindowSync.broadcast({
+            type: 'zenToggleUpdate',
+            toggleId: message.toggleId,
+            value: message.value,
+            settings: this.zenManager.getUserSettings()
+          })
         }
         break
 
       case 'pomodoroStart':
         this.pomodoroTimer.start()
+        this.crossWindowSync.broadcast({
+          type: 'pomodoroStart',
+          state: this.pomodoroTimer.getState(),
+          settings: this.pomodoroTimer.getSettings()
+        })
         break
 
       case 'pomodoroPause':
         this.pomodoroTimer.pause()
+        this.crossWindowSync.broadcast({
+          type: 'pomodoroPause',
+          state: this.pomodoroTimer.getState()
+        })
         break
 
       case 'pomodoroStop':
         this.pomodoroTimer.reset()
+        this.crossWindowSync.broadcast({ type: 'pomodoroReset' })
         break
 
       case 'pomodoroSkip':
         this.pomodoroTimer.skip()
+        this.crossWindowSync.broadcast({
+          type: 'pomodoroSkip',
+          state: this.pomodoroTimer.getState(),
+          settings: this.pomodoroTimer.getSettings()
+        })
         break
 
       case 'pomodoroReset':
         this.pomodoroTimer.reset()
+        this.crossWindowSync.broadcast({ type: 'pomodoroReset' })
         break
 
       case 'updatePomodoroSettings':
         if (message.settings) {
           this.pomodoroTimer.updateSettings(message.settings)
+          this.crossWindowSync.broadcast({
+            type: 'pomodoroSettingsChange',
+            settings: this.pomodoroTimer.getSettings()
+          })
         }
         break
 
@@ -192,6 +244,10 @@ export class ZenPanel {
             if (!this.zenManager.isZenModeEnabled()) {
               await this.zenManager.enable()
             }
+            this.crossWindowSync.broadcast({
+              type: 'zenApplyPreset',
+              settings: this.zenManager.getUserSettings()
+            })
           }
         }
         break
@@ -232,6 +288,23 @@ export class ZenPanel {
           )
         }
         break
+
+      case 'updateScheduleSettings':
+        if (message.scheduleSettings) {
+          await this.scheduleManager.updateSchedule(message.scheduleSettings)
+        }
+        break
+
+      case 'confirmExtendSession':
+        if (message.endTime) {
+          this.scheduleManager.writeExtendAction(message.endTime)
+          this.scheduleManager.setTemporaryEndTime(message.endTime)
+        }
+        break
+
+      case 'cancelExtendSession':
+        this.scheduleManager.dismissExtend()
+        break
     }
   }
 
@@ -253,7 +326,8 @@ export class ZenPanel {
         this.pomodoroTimer.getState().timeRemaining
       ),
       progress: this.pomodoroTimer.getProgress(),
-      timerVisibility: this.getTimerVisibility()
+      timerVisibility: this.getTimerVisibility(),
+      scheduleSettings: this.scheduleManager.getSchedule()
     }
 
     this.panel.webview.html = buildWebviewHtml(
@@ -261,6 +335,11 @@ export class ZenPanel {
       this.extensionUri,
       data
     )
+  }
+
+  public showExtendModal(): void {
+    this.panel.reveal()
+    this.panel.webview.postMessage({ type: 'showExtendModal' })
   }
 
   public dispose(): void {
@@ -284,4 +363,6 @@ interface WebviewMessage {
   presetId?: string
   settings?: Partial<PomodoroSettings>
   visibility?: TimerVisibility
+  scheduleSettings?: Partial<WorkSchedule>
+  endTime?: string
 }

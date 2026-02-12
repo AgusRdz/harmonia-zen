@@ -5,12 +5,16 @@ import { ZenModeManager } from './logic/zenModeManager'
 import { PomodoroTimer } from './logic/pomodoroTimer'
 import { PresetManager } from './logic/presetManager'
 import { StatisticsManager } from './logic/statisticsManager'
+import { ScheduleManager } from './logic/scheduleManager'
+import { CrossWindowSync, SyncAction } from './logic/crossWindowSync'
 import { initializeTranslations } from './i18n/translations'
 
 let zenManager: ZenModeManager
 let pomodoroTimer: PomodoroTimer
 let presetManager: PresetManager
 let statisticsManager: StatisticsManager
+let scheduleManager: ScheduleManager
+let crossWindowSync: CrossWindowSync
 let statusBarItem: vscode.StatusBarItem
 let extensionContext: vscode.ExtensionContext
 
@@ -47,10 +51,83 @@ export function activate(context: vscode.ExtensionContext): void {
   pomodoroTimer = new PomodoroTimer(context)
   presetManager = new PresetManager(context)
   statisticsManager = new StatisticsManager(context)
+  scheduleManager = new ScheduleManager(context, pomodoroTimer)
+  crossWindowSync = new CrossWindowSync(context)
+
+  // Register cross-window sync handlers
+  crossWindowSync.onPomodoroSync((action: SyncAction) => {
+    switch (action.type) {
+      case 'pomodoroStart':
+      case 'pomodoroPause':
+      case 'pomodoroSkip':
+        pomodoroTimer.syncState(action.state, action.settings)
+        break
+      case 'pomodoroReset':
+        pomodoroTimer.syncState(
+          {
+            phase: 'idle',
+            timeRemaining: pomodoroTimer.getSettings().workDuration * 60,
+            totalTime: pomodoroTimer.getSettings().workDuration * 60,
+            isRunning: false,
+            completedSessions: 0,
+            sessionsUntilLongBreak: pomodoroTimer.getSettings().sessionsBeforeLongBreak
+          }
+        )
+        break
+      case 'pomodoroSettingsChange':
+        if ('settings' in action) {
+          pomodoroTimer.syncSettings(action.settings)
+        }
+        break
+    }
+  })
+
+  crossWindowSync.onZenSync(async (action: SyncAction) => {
+    switch (action.type) {
+      case 'zenEnable':
+      case 'zenApplyPreset':
+        if ('settings' in action) {
+          await zenManager.syncState(true, action.settings)
+        }
+        break
+      case 'zenDisable':
+        if ('settings' in action) {
+          await zenManager.syncState(false, action.settings)
+        }
+        break
+      case 'zenToggleUpdate':
+        if ('settings' in action) {
+          await zenManager.syncState(
+            zenManager.isZenModeEnabled(),
+            action.settings
+          )
+        }
+        break
+    }
+  })
 
   // Track completed work sessions for statistics
   pomodoroTimer.onWorkSessionComplete((focusMinutes) => {
     statisticsManager.recordCompletedSession(focusMinutes)
+  })
+
+  scheduleManager.onEndSession(async () => {
+    pomodoroTimer.reset()
+    if (zenManager.isZenModeEnabled()) {
+      await zenManager.disable()
+    }
+  })
+
+  scheduleManager.onExtendRequested(() => {
+    const panel = ZenPanel.createOrShow(
+      context.extensionUri,
+      zenManager,
+      pomodoroTimer,
+      presetManager,
+      scheduleManager,
+      crossWindowSync
+    )
+    panel.showExtendModal()
   })
 
   statusBarItem = createStatusBarItem()
@@ -77,7 +154,9 @@ export function activate(context: vscode.ExtensionContext): void {
         context.extensionUri,
         zenManager,
         pomodoroTimer,
-        presetManager
+        presetManager,
+        scheduleManager,
+        crossWindowSync
       )
     }
   )
@@ -86,6 +165,11 @@ export function activate(context: vscode.ExtensionContext): void {
     'harmonia-zen.toggle',
     async () => {
       await zenManager.toggle()
+      const enabled = zenManager.isZenModeEnabled()
+      crossWindowSync.broadcast({
+        type: enabled ? 'zenEnable' : 'zenDisable',
+        settings: zenManager.getUserSettings()
+      })
     }
   )
 
@@ -93,6 +177,11 @@ export function activate(context: vscode.ExtensionContext): void {
     'harmonia-zen.startPomodoro',
     () => {
       pomodoroTimer.start()
+      crossWindowSync.broadcast({
+        type: 'pomodoroStart',
+        state: pomodoroTimer.getState(),
+        settings: pomodoroTimer.getSettings()
+      })
     }
   )
 
@@ -100,6 +189,10 @@ export function activate(context: vscode.ExtensionContext): void {
     'harmonia-zen.pausePomodoro',
     () => {
       pomodoroTimer.pause()
+      crossWindowSync.broadcast({
+        type: 'pomodoroPause',
+        state: pomodoroTimer.getState()
+      })
     }
   )
 
@@ -107,6 +200,7 @@ export function activate(context: vscode.ExtensionContext): void {
     'harmonia-zen.stopPomodoro',
     () => {
       pomodoroTimer.reset()
+      crossWindowSync.broadcast({ type: 'pomodoroReset' })
     }
   )
 
@@ -114,6 +208,7 @@ export function activate(context: vscode.ExtensionContext): void {
     'harmonia-zen.resetPomodoro',
     () => {
       pomodoroTimer.reset()
+      crossWindowSync.broadcast({ type: 'pomodoroReset' })
     }
   )
 
@@ -121,6 +216,11 @@ export function activate(context: vscode.ExtensionContext): void {
     'harmonia-zen.skipSession',
     () => {
       pomodoroTimer.skip()
+      crossWindowSync.broadcast({
+        type: 'pomodoroSkip',
+        state: pomodoroTimer.getState(),
+        settings: pomodoroTimer.getSettings()
+      })
     }
   )
 
@@ -131,8 +231,17 @@ export function activate(context: vscode.ExtensionContext): void {
       const state = pomodoroTimer.getState()
       if (state.isRunning) {
         pomodoroTimer.pause()
+        crossWindowSync.broadcast({
+          type: 'pomodoroPause',
+          state: pomodoroTimer.getState()
+        })
       } else {
         pomodoroTimer.start()
+        crossWindowSync.broadcast({
+          type: 'pomodoroStart',
+          state: pomodoroTimer.getState(),
+          settings: pomodoroTimer.getSettings()
+        })
       }
     }
   )
@@ -147,6 +256,10 @@ export function activate(context: vscode.ExtensionContext): void {
         if (!zenManager.isZenModeEnabled()) {
           await zenManager.enable()
         }
+        crossWindowSync.broadcast({
+          type: 'zenApplyPreset',
+          settings: zenManager.getUserSettings()
+        })
       }
     }
   )
@@ -193,6 +306,9 @@ export function activate(context: vscode.ExtensionContext): void {
     showStatisticsCommand,
     getTimerStateCommand
   )
+
+  // Late-joiner support: apply recent state from other windows
+  crossWindowSync.initialSync()
 }
 
 function createStatusBarItem(): vscode.StatusBarItem {
@@ -232,7 +348,7 @@ function updateStatusBar(): void {
 
   if (state.phase === 'idle') {
     statusBarItem.text = `${zenIcon} Zen`
-    statusBarItem.tooltip = 'Harmonia Zen — Click to open panel'
+    statusBarItem.tooltip = 'Harmonia Zen - Click to open panel'
   } else {
     const phaseLabel = state.phase === 'work' ? 'Work' : state.phase === 'break' ? 'Break' : 'Long Break'
     const phaseIcon = state.phase === 'work' ? '$(clock)' : '$(coffee)'
@@ -240,7 +356,7 @@ function updateStatusBar(): void {
     const runningIndicator = state.isRunning ? '' : ' $(debug-pause)'
 
     statusBarItem.text = `${zenIcon} ${phaseIcon} ${time}${runningIndicator}`
-    statusBarItem.tooltip = `Harmonia Zen — Pomodoro ${phaseLabel} (${time})${state.isRunning ? '' : ' [Paused]'}`
+    statusBarItem.tooltip = `Harmonia Zen - Pomodoro ${phaseLabel} (${time})${state.isRunning ? '' : ' [Paused]'}`
   }
 
   // Remove the yellow warning background - keep it clean and consistent
@@ -259,5 +375,13 @@ export function deactivate(): void {
 
   if (StatisticsPanel.currentPanel) {
     StatisticsPanel.currentPanel.dispose()
+  }
+
+  if (scheduleManager) {
+    scheduleManager.dispose()
+  }
+
+  if (crossWindowSync) {
+    crossWindowSync.dispose()
   }
 }

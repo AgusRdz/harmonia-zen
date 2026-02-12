@@ -76,6 +76,27 @@ export type TranslationKey =
   | 'common.minutes'
   | 'common.enabled'
   | 'common.disabled'
+  | 'schedule.title'
+  | 'schedule.enable'
+  | 'schedule.workDays'
+  | 'schedule.startTime'
+  | 'schedule.endTime'
+  | 'schedule.shiftEnded'
+  | 'schedule.extendSession'
+  | 'schedule.endSession'
+  | 'schedule.mon'
+  | 'schedule.tue'
+  | 'schedule.wed'
+  | 'schedule.thu'
+  | 'schedule.fri'
+  | 'schedule.sat'
+  | 'schedule.sun'
+  | 'schedule.description'
+  | 'schedule.extendModalTitle'
+  | 'schedule.extendModalDesc'
+  | 'schedule.newEndTime'
+  | 'schedule.confirm'
+  | 'schedule.cancel'
 
 type Translations = Record<TranslationKey, string>
 
@@ -155,7 +176,28 @@ const en: Translations = {
   'common.off': 'Off',
   'common.minutes': 'min',
   'common.enabled': 'Enabled',
-  'common.disabled': 'Disabled'
+  'common.disabled': 'Disabled',
+  'schedule.title': 'Working Schedule',
+  'schedule.enable': 'Enable Working Schedule',
+  'schedule.workDays': 'Work Days',
+  'schedule.startTime': 'Start Time',
+  'schedule.endTime': 'End Time',
+  'schedule.shiftEnded': 'Your scheduled session has ended.',
+  'schedule.extendSession': 'Extend Session',
+  'schedule.endSession': 'End Session',
+  'schedule.mon': 'Mon',
+  'schedule.tue': 'Tue',
+  'schedule.wed': 'Wed',
+  'schedule.thu': 'Thu',
+  'schedule.fri': 'Fri',
+  'schedule.sat': 'Sat',
+  'schedule.sun': 'Sun',
+  'schedule.description': 'You will be notified when your session ends.',
+  'schedule.extendModalTitle': 'Extend Session',
+  'schedule.extendModalDesc': 'Set a new end time for this session only. This will not change your saved schedule.',
+  'schedule.newEndTime': 'New End Time',
+  'schedule.confirm': 'Confirm',
+  'schedule.cancel': 'Cancel'
 }
 
 const es: Translations = {
@@ -234,7 +276,28 @@ const es: Translations = {
   'common.off': 'Desactivado',
   'common.minutes': 'min',
   'common.enabled': 'Activado',
-  'common.disabled': 'Desactivado'
+  'common.disabled': 'Desactivado',
+  'schedule.title': 'Horario de Trabajo',
+  'schedule.enable': 'Activar Horario de Trabajo',
+  'schedule.workDays': 'Dias laborales',
+  'schedule.startTime': 'Hora de inicio',
+  'schedule.endTime': 'Hora de fin',
+  'schedule.shiftEnded': 'Tu sesion programada ha terminado.',
+  'schedule.extendSession': 'Extender Sesion',
+  'schedule.endSession': 'Finalizar Sesion',
+  'schedule.mon': 'Lun',
+  'schedule.tue': 'Mar',
+  'schedule.wed': 'Mie',
+  'schedule.thu': 'Jue',
+  'schedule.fri': 'Vie',
+  'schedule.sat': 'Sab',
+  'schedule.sun': 'Dom',
+  'schedule.description': 'Se te notificara cuando tu sesion termine.',
+  'schedule.extendModalTitle': 'Extender Sesion',
+  'schedule.extendModalDesc': 'Define una nueva hora de fin solo para esta sesion. No cambiara tu horario guardado.',
+  'schedule.newEndTime': 'Nueva Hora de Fin',
+  'schedule.confirm': 'Confirmar',
+  'schedule.cancel': 'Cancelar'
 }
 
 const translations: Record<string, Translations> = {
