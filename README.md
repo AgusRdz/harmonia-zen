@@ -2,7 +2,7 @@
 
 An immersive, distraction-free coding environment for Visual Studio Code with customizable Zen Mode and integrated Pomodoro timer.
 
-![Zen Mode and Focus Statistics](images/focus-statistics-and-zen-mode.png)
+![Zen Mode and Focus Statistics](https://raw.githubusercontent.com/AgusRdz/harmonia-zen/refs/heads/master/images/focus-statistics-and-zen-mode.png)
 
 ## Why Harmonia Zen?
 
@@ -23,7 +23,7 @@ VS Code includes a built-in Zen Mode that hides UI elements for distraction-free
 
 A sleek control panel where you configure your distraction-free environment. Toggle individual UI elements on or off to create your perfect workspace.
 
-![Zen Mode Panel](images/zen-mode.png)
+![Zen Mode Panel](https://raw.githubusercontent.com/AgusRdz/harmonia-zen/refs/heads/master/images/zen-mode.png)
 
 **Controllable elements:**
 
@@ -59,7 +59,7 @@ Structure your work with the Pomodoro Technique:
 
 Track your productivity journey with detailed statistics:
 
-![Focus Statistics](images/focus-statistics.png)
+![Focus Statistics](https://raw.githubusercontent.com/AgusRdz/harmonia-zen/refs/heads/master/images/focus-statistics.png)
 
 - **Today's progress** - Sessions and focus time
 - **Streak tracking** - Current and longest streaks
@@ -169,4 +169,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Demo
 
-![Harmonia Zen Demo](images/demo.gif)
+![Harmonia Zen Demo](https://raw.githubusercontent.com/AgusRdz/harmonia-zen/refs/heads/master/images/demo.gif)
