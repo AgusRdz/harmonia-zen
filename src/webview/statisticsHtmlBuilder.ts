@@ -22,6 +22,7 @@ export function buildStatisticsHtml(
   const weekData = statisticsManager.getWeeklyChartData()
   const maxSessions = Math.max(...weekData.map(d => d.sessions), 1)
   const maxFocusMinutes = Math.max(...weekData.map(d => d.focusMinutes), 1)
+  const maxZenMinutes = Math.max(...weekData.map(d => d.zenMinutes), 1)
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -45,10 +46,11 @@ export function buildStatisticsHtml(
     </header>
 
     <div class="stats-overview">
-      ${buildOverviewCard('today-sessions', stats.today.sessionsCompleted.toString(), t('statistics.sessions'), t('statistics.today'), true)}
-      ${buildOverviewCard('today-focus', statisticsManager.formatMinutes(stats.today.focusMinutes), t('statistics.focusTime'), t('statistics.today'), true)}
-      ${buildOverviewCard('streak', stats.currentStreak.toString(), t('statistics.streak'), t('statistics.days'), false)}
-      ${buildOverviewCard('longest', stats.longestStreak.toString(), t('statistics.longestStreak'), t('statistics.days'), false)}
+      ${buildOverviewCard('today-sessions', stats.today.sessionsCompleted.toString(), t('statistics.sessions'), t('statistics.today'), 'blue')}
+      ${buildOverviewCard('today-focus', statisticsManager.formatMinutes(stats.today.focusMinutes), t('statistics.focusTime'), t('statistics.today'), 'green')}
+      ${buildOverviewCard('today-zen', statisticsManager.formatMinutes(stats.todayZenMinutes), t('statistics.zenTime'), t('statistics.today'), 'purple')}
+      ${buildOverviewCard('streak', stats.currentStreak.toString(), t('statistics.streak'), t('statistics.days'), 'none')}
+      ${buildOverviewCard('longest', stats.longestStreak.toString(), t('statistics.longestStreak'), t('statistics.days'), 'none')}
     </div>
 
     <div class="charts-section">
@@ -89,6 +91,25 @@ export function buildStatisticsHtml(
           `).join('')}
         </div>
       </div>
+
+      <div class="chart-card chart-card-full">
+        <h2 class="chart-title">
+          <span class="codicon codicon-eye-closed"></span>
+          ${t('statistics.zenTime')} - ${t('statistics.week')}
+        </h2>
+        <div class="bar-chart">
+          ${weekData.map(d => `
+            <div class="bar-column">
+              <div class="bar-wrapper">
+                <div class="bar zen-bar" style="height: ${(d.zenMinutes / maxZenMinutes) * 100}%">
+                  ${d.zenMinutes > 0 ? `<span class="bar-value">${statisticsManager.formatMinutes(d.zenMinutes)}</span>` : ''}
+                </div>
+              </div>
+              <span class="bar-label">${d.dayShort}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
     </div>
 
     <div class="totals-section">
@@ -103,6 +124,10 @@ export function buildStatisticsHtml(
             <span class="total-value">${statisticsManager.formatMinutes(stats.weekFocusMinutes)}</span>
             <span class="total-label">${t('statistics.focusTime')}</span>
           </div>
+          <div class="total-item">
+            <span class="total-value zen-value">${statisticsManager.formatMinutes(stats.weekZenMinutes)}</span>
+            <span class="total-label">${t('statistics.zenTime')}</span>
+          </div>
         </div>
       </div>
       <div class="totals-card">
@@ -116,6 +141,10 @@ export function buildStatisticsHtml(
             <span class="total-value">${statisticsManager.formatMinutes(stats.totalFocusMinutes)}</span>
             <span class="total-label">${t('statistics.focusTime')}</span>
           </div>
+          <div class="total-item">
+            <span class="total-value zen-value">${statisticsManager.formatMinutes(stats.totalZenMinutes)}</span>
+            <span class="total-label">${t('statistics.zenTime')}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -124,10 +153,11 @@ export function buildStatisticsHtml(
 </html>`
 }
 
-function buildOverviewCard(id: string, value: string, label: string, sublabel: string, highlight: boolean): string {
+function buildOverviewCard(id: string, value: string, label: string, sublabel: string, color: 'blue' | 'green' | 'purple' | 'none'): string {
+  const colorClass = color !== 'none' ? `highlight-${color}` : ''
   return `
     <div class="overview-card">
-      <div class="overview-value ${highlight ? 'highlight' : ''}" id="${id}">${value}</div>
+      <div class="overview-value ${colorClass}" id="${id}">${value}</div>
       <div class="overview-label">${label}</div>
       <div class="overview-sublabel">${sublabel}</div>
     </div>
@@ -197,7 +227,7 @@ function getStyles(): string {
     /* Overview Cards */
     .stats-overview {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
       gap: var(--spacing-md);
       margin-bottom: var(--spacing-xl);
     }
@@ -217,8 +247,16 @@ function getStyles(): string {
       color: var(--vscode-foreground);
     }
 
-    .overview-value.highlight {
+    .overview-value.highlight-blue {
       color: var(--vscode-charts-blue);
+    }
+
+    .overview-value.highlight-green {
+      color: var(--vscode-charts-green);
+    }
+
+    .overview-value.highlight-purple {
+      color: var(--vscode-charts-purple);
     }
 
     .overview-label {
@@ -242,6 +280,10 @@ function getStyles(): string {
       grid-template-columns: 1fr 1fr;
       gap: var(--spacing-lg);
       margin-bottom: var(--spacing-xl);
+    }
+
+    .chart-card-full {
+      grid-column: 1 / -1;
     }
 
     .chart-card {
@@ -306,6 +348,15 @@ function getStyles(): string {
     .focus-bar {
       background: linear-gradient(180deg, var(--vscode-charts-green) 0%, var(--vscode-charts-green) 100%);
       opacity: 0.85;
+    }
+
+    .zen-bar {
+      background: linear-gradient(180deg, var(--vscode-charts-purple) 0%, var(--vscode-charts-purple) 100%);
+      opacity: 0.85;
+    }
+
+    .zen-value {
+      color: var(--vscode-charts-purple);
     }
 
     .bar-value {
@@ -374,10 +425,6 @@ function getStyles(): string {
 
     /* Responsive */
     @media (max-width: 600px) {
-      .stats-overview {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
       .charts-section,
       .totals-section {
         grid-template-columns: 1fr;

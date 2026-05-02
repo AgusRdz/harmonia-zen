@@ -22,6 +22,7 @@ export type TranslationKey =
   | 'zenMode.toggles.cursorBlinking'
   | 'zenMode.toggles.renderWhitespace'
   | 'zenMode.toggles.lineHighlight'
+  | 'zenMode.toggles.fullScreen'
   | 'pomodoro.title'
   | 'pomodoro.work'
   | 'pomodoro.break'
@@ -70,6 +71,7 @@ export type TranslationKey =
   | 'statistics.longestStreak'
   | 'statistics.week'
   | 'statistics.allTime'
+  | 'statistics.zenTime'
   | 'statistics.days'
   | 'common.on'
   | 'common.off'
@@ -122,6 +124,7 @@ const en: Translations = {
   'zenMode.toggles.cursorBlinking': 'Cursor Blinking',
   'zenMode.toggles.renderWhitespace': 'Render Whitespace',
   'zenMode.toggles.lineHighlight': 'Line Highlight',
+  'zenMode.toggles.fullScreen': 'Full Screen',
   'pomodoro.title': 'Pomodoro Timer',
   'pomodoro.work': 'Work',
   'pomodoro.break': 'Break',
@@ -171,6 +174,7 @@ const en: Translations = {
   'statistics.longestStreak': 'Longest Streak',
   'statistics.week': 'This Week',
   'statistics.allTime': 'All Time',
+  'statistics.zenTime': 'Zen Time',
   'statistics.days': 'days',
   'common.on': 'On',
   'common.off': 'Off',
@@ -222,6 +226,7 @@ const es: Translations = {
   'zenMode.toggles.cursorBlinking': 'Parpadeo del cursor',
   'zenMode.toggles.renderWhitespace': 'Mostrar espacios',
   'zenMode.toggles.lineHighlight': 'Resaltado de linea',
+  'zenMode.toggles.fullScreen': 'Pantalla completa',
   'pomodoro.title': 'Temporizador Pomodoro',
   'pomodoro.work': 'Trabajo',
   'pomodoro.break': 'Descanso',
@@ -271,6 +276,7 @@ const es: Translations = {
   'statistics.longestStreak': 'Racha Mas Larga',
   'statistics.week': 'Esta Semana',
   'statistics.allTime': 'Todo el Tiempo',
+  'statistics.zenTime': 'Tiempo Zen',
   'statistics.days': 'dias',
   'common.on': 'Activado',
   'common.off': 'Desactivado',

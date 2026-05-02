@@ -33,7 +33,8 @@ const builtInPresets: Preset[] = [
       tabs: false,
       cursorBlinking: false,
       renderWhitespace: false,
-      lineHighlight: false
+      lineHighlight: false,
+      fullScreen: false
     }
   },
   {
@@ -57,7 +58,8 @@ const builtInPresets: Preset[] = [
       tabs: false,
       cursorBlinking: true,
       renderWhitespace: false,
-      lineHighlight: true
+      lineHighlight: true,
+      fullScreen: false
     }
   },
   {
@@ -81,7 +83,8 @@ const builtInPresets: Preset[] = [
       tabs: false,
       cursorBlinking: true,
       renderWhitespace: false,
-      lineHighlight: true
+      lineHighlight: true,
+      fullScreen: false
     }
   }
 ]

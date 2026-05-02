@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.3.0] - 2026-05-02
+
+### Added
+
+- **Full Screen on Zen Mode** - Optionally enter full screen automatically when Zen Mode is activated
+  - New "Full Screen" toggle in the UI Elements section of the Zen Panel
+  - Off by default - enable it per your preference
+  - Full screen is exited automatically when Zen Mode is disabled, restoring the previous window state
+  - Compatible with both VS Code and VSCodium
+
+- **Zen Mode Time Tracker** - Track time spent in Zen Mode independently of the Pomodoro timer
+  - Designed for users who prefer deep work without the Pomodoro technique
+  - Zen time accumulates across multiple enable/disable cycles within the same day
+  - Tracked separately from Pomodoro focus minutes, so both metrics are visible side by side
+  - Tracking resumes automatically if Zen Mode was still active when VS Code was last closed
+  - Zen session time is saved when VS Code closes so no data is lost
+
+### Improved
+
+- **Statistics panel** - Extended to show Zen Mode time alongside Pomodoro focus time
+  - New "Zen Time" overview card (Today)
+  - New weekly bar chart for Zen Mode time per day
+  - Zen time column in "This Week" and "All Time" totals
+
+---
+
 ## [1.2.0] - 2026-02-11
 
 ### Added

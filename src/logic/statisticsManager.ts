@@ -4,6 +4,7 @@ export interface DailyStats {
   date: string // YYYY-MM-DD format
   sessionsCompleted: number
   focusMinutes: number
+  zenMinutes: number
 }
 
 export interface FocusStatistics {
@@ -14,6 +15,9 @@ export interface FocusStatistics {
   totalFocusMinutes: number
   weekSessions: number
   weekFocusMinutes: number
+  todayZenMinutes: number
+  weekZenMinutes: number
+  totalZenMinutes: number
 }
 
 interface StoredStatistics {
@@ -27,6 +31,7 @@ export class StatisticsManager {
   private context: vscode.ExtensionContext
   private stats: StoredStatistics
   private onStatsChangeCallbacks: Array<(stats: FocusStatistics) => void> = []
+  private currentZenSessionStart: number | null = null
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context
@@ -86,7 +91,8 @@ export class StatisticsManager {
       this.stats.dailyStats[todayKey] = {
         date: todayKey,
         sessionsCompleted: 0,
-        focusMinutes: 0
+        focusMinutes: 0,
+        zenMinutes: 0
       }
     }
 
@@ -103,6 +109,39 @@ export class StatisticsManager {
     this.notifyStatsChange()
   }
 
+  startZenSession(): void {
+    this.currentZenSessionStart = Date.now()
+  }
+
+  endZenSession(): void {
+    if (this.currentZenSessionStart === null) {
+      return
+    }
+
+    const durationMinutes = Math.round((Date.now() - this.currentZenSessionStart) / 60000)
+    this.currentZenSessionStart = null
+
+    if (durationMinutes <= 0) {
+      return
+    }
+
+    const todayKey = this.getTodayKey()
+    if (!this.stats.dailyStats[todayKey]) {
+      this.stats.dailyStats[todayKey] = {
+        date: todayKey,
+        sessionsCompleted: 0,
+        focusMinutes: 0,
+        zenMinutes: 0
+      }
+    }
+
+    const day = this.stats.dailyStats[todayKey]
+    day.zenMinutes = (day.zenMinutes ?? 0) + durationMinutes
+
+    this.saveStats()
+    this.notifyStatsChange()
+  }
+
   getStatistics(): FocusStatistics {
     const todayKey = this.getTodayKey()
     const weekKeys = this.getWeekKeys()
@@ -110,26 +149,31 @@ export class StatisticsManager {
     const today = this.stats.dailyStats[todayKey] || {
       date: todayKey,
       sessionsCompleted: 0,
-      focusMinutes: 0
+      focusMinutes: 0,
+      zenMinutes: 0
     }
 
     // Calculate week totals
     let weekSessions = 0
     let weekFocusMinutes = 0
+    let weekZenMinutes = 0
     for (const key of weekKeys) {
       const dayStats = this.stats.dailyStats[key]
       if (dayStats) {
         weekSessions += dayStats.sessionsCompleted
         weekFocusMinutes += dayStats.focusMinutes
+        weekZenMinutes += dayStats.zenMinutes ?? 0
       }
     }
 
     // Calculate all-time totals
     let totalSessions = 0
     let totalFocusMinutes = 0
+    let totalZenMinutes = 0
     for (const dayStats of Object.values(this.stats.dailyStats)) {
       totalSessions += dayStats.sessionsCompleted
       totalFocusMinutes += dayStats.focusMinutes
+      totalZenMinutes += dayStats.zenMinutes ?? 0
     }
 
     return {
@@ -139,7 +183,10 @@ export class StatisticsManager {
       totalSessions,
       totalFocusMinutes,
       weekSessions,
-      weekFocusMinutes
+      weekFocusMinutes,
+      todayZenMinutes: today.zenMinutes ?? 0,
+      weekZenMinutes,
+      totalZenMinutes
     }
   }
 
@@ -180,9 +227,9 @@ export class StatisticsManager {
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
   }
 
-  getWeeklyChartData(): Array<{ day: string; dayShort: string; sessions: number; focusMinutes: number }> {
+  getWeeklyChartData(): Array<{ day: string; dayShort: string; sessions: number; focusMinutes: number; zenMinutes: number }> {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-    const data: Array<{ day: string; dayShort: string; sessions: number; focusMinutes: number }> = []
+    const data: Array<{ day: string; dayShort: string; sessions: number; focusMinutes: number; zenMinutes: number }> = []
 
     for (let i = 6; i >= 0; i--) {
       const date = new Date()
@@ -194,7 +241,8 @@ export class StatisticsManager {
         day: dateKey,
         dayShort: days[date.getDay()],
         sessions: dayStats?.sessionsCompleted || 0,
-        focusMinutes: dayStats?.focusMinutes || 0
+        focusMinutes: dayStats?.focusMinutes || 0,
+        zenMinutes: dayStats?.zenMinutes || 0
       })
     }
 

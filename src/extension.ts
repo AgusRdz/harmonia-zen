@@ -143,9 +143,19 @@ export function activate(context: vscode.ExtensionContext): void {
     updateStatusBar()
   })
 
-  zenManager.onStateChange(() => {
+  zenManager.onStateChange((enabled) => {
+    if (enabled) {
+      statisticsManager.startZenSession()
+    } else {
+      statisticsManager.endZenSession()
+    }
     updateStatusBar()
   })
+
+  // Resume tracking if zen was already active from a previous session
+  if (zenManager.isZenModeEnabled()) {
+    statisticsManager.startZenSession()
+  }
 
   const openPanelCommand = vscode.commands.registerCommand(
     'harmonia-zen.openPanel',
@@ -365,6 +375,10 @@ function updateStatusBar(): void {
 }
 
 export function deactivate(): void {
+  if (statisticsManager && zenManager?.isZenModeEnabled()) {
+    statisticsManager.endZenSession()
+  }
+
   if (pomodoroTimer) {
     pomodoroTimer.dispose()
   }

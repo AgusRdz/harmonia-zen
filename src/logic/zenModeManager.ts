@@ -28,6 +28,7 @@ export interface ZenModeSettings {
   cursorBlinking: boolean
   renderWhitespace: boolean
   lineHighlight: boolean
+  fullScreen: boolean
 }
 
 export interface SettingsSnapshot {
@@ -159,6 +160,14 @@ export const toggleDefinitions: ZenModeToggle[] = [
     settingPath: 'editor.renderLineHighlight',
     zenValue: 'none',
     defaultValue: 'line'
+  },
+  {
+    id: 'fullScreen',
+    label: 'zenMode.toggles.fullScreen',
+    settingPath: '',
+    zenValue: true,
+    defaultValue: false,
+    isCommand: true
   }
 ]
 
@@ -172,6 +181,7 @@ export class ZenModeManager {
     []
   private sideBarWasVisible = true
   private panelWasVisible = false
+  private enteredFullScreen = false
 
   private debouncedSaveUserSettings = debounce(() => {
     this.context.globalState.update(STORAGE_KEY_USER_SETTINGS, this.userSettings)
@@ -198,7 +208,8 @@ export class ZenModeManager {
       tabs: false,
       cursorBlinking: false,
       renderWhitespace: false,
-      lineHighlight: false
+      lineHighlight: false,
+      fullScreen: false
     })
   }
 
@@ -302,6 +313,14 @@ export class ZenModeManager {
           } else {
             await vscode.commands.executeCommand('workbench.action.closePanel')
           }
+        } else if (toggle.id === 'fullScreen') {
+          if (showElement && !this.enteredFullScreen) {
+            await vscode.commands.executeCommand('workbench.action.toggleFullScreen')
+            this.enteredFullScreen = true
+          } else if (!showElement && this.enteredFullScreen) {
+            await vscode.commands.executeCommand('workbench.action.toggleFullScreen')
+            this.enteredFullScreen = false
+          }
         }
       } else {
         // Apply zen value (hide) or restore from snapshot (show)
@@ -332,6 +351,11 @@ export class ZenModeManager {
           )
         }
       }
+    }
+
+    if (this.enteredFullScreen) {
+      await vscode.commands.executeCommand('workbench.action.toggleFullScreen')
+      this.enteredFullScreen = false
     }
 
     if (this.sideBarWasVisible) {
@@ -376,6 +400,14 @@ export class ZenModeManager {
           await vscode.commands.executeCommand('workbench.action.togglePanel')
         } else {
           await vscode.commands.executeCommand('workbench.action.closePanel')
+        }
+      } else if (toggle.id === 'fullScreen') {
+        if (showElement && !this.enteredFullScreen) {
+          await vscode.commands.executeCommand('workbench.action.toggleFullScreen')
+          this.enteredFullScreen = true
+        } else if (!showElement && this.enteredFullScreen) {
+          await vscode.commands.executeCommand('workbench.action.toggleFullScreen')
+          this.enteredFullScreen = false
         }
       }
     } else {
